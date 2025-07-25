@@ -6,8 +6,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Tab Writer - AI-Powered Writing Tool',
-  description: 'A writing tool with tone-switching autocomplete powered by AI',
+  title: 'Chameleon - Writing Tool',
+  description: 'An adaptive writing tool that changes tone, purpose, genre, and structure like a chameleon changes colors',
 };
 
 export default function RootLayout({

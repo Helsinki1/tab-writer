@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Tab Writer Setup Script
-echo "🚀 Setting up Tab Writer - AI-Powered Writing Tool"
+# Chameleon Setup Script
+echo "🚀 Setting up Chameleon - Adaptive AI Writing Tool"
 echo "=================================================="
 
 # Colors for output
@@ -21,7 +21,7 @@ fi
 echo -e "${GREEN}✅ Prerequisites check passed${NC}"
 
 # Setup Frontend (now includes backend functionality)
-echo -e "\n${BLUE}🔧 Setting up Tab Writer Application...${NC}"
+echo -e "\n${BLUE}🔧 Setting up Chameleon Application...${NC}"
 cd frontend
 
 # Install Node.js dependencies

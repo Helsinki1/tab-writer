@@ -18,10 +18,10 @@ export default function Home() {
             {/* Hero Section */}
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                Tab Writer
+                Chameleon
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-                AI-powered writing tool with intelligent tone-switching autocomplete
+                AI-assisted writing that retains your voice and style by autocompleting thoughts.
               </p>
               
               {/* Theme Toggle */}

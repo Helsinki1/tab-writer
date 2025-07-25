@@ -25,7 +25,9 @@ import {
 // Types
 type ToneType = 'professional' | 'casual' | 'creative' | 'concise' | 'witty' | 'instructional' | 'urgent' | 'reflective';
 type PurposeType = 'persuasive' | 'informative' | 'descriptive' | 'flattering' | 'narrative';
-type ModeType = 'tone' | 'purpose';
+type GenreType = 'email' | 'essay' | 'social post' | 'report' | 'story' | 'research' | 'sales' | 'education';
+type StructureType = 'chronological' | 'problem-solution' | 'cause-effect' | 'compare-contrast' | 'question-answer' | 'counter-argument' | 'for and against' | 'list' | 'inverted pyramid' | 'narrative';
+type ModeType = 'tone' | 'purpose' | 'genre' | 'structure';
 
 interface AutocompleteState {
   suggestion: string;
@@ -35,14 +37,14 @@ interface AutocompleteState {
 
 // API service
 const autocompleteService = {
-  async getSuggestion(text: string, tone: ToneType, purpose: PurposeType): Promise<string> {
+  async getSuggestion(text: string, tone: ToneType, purpose: PurposeType, genre: GenreType, structure: StructureType): Promise<string> {
     try {
       const response = await fetch('/api/autocomplete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text, tone, purpose }),
+        body: JSON.stringify({ text, tone, purpose, genre, structure }),
       });
 
       if (!response.ok) {
@@ -81,6 +83,10 @@ function AutocompletePlugin({
   setCurrentTone,
   currentPurpose,
   setCurrentPurpose,
+  currentGenre,
+  setCurrentGenre,
+  currentStructure,
+  setCurrentStructure,
   currentMode,
   setCurrentMode,
   autocompleteState,
@@ -90,12 +96,18 @@ function AutocompletePlugin({
   onDismissSuggestion,
   onSwitchTone,
   onSwitchPurpose,
+  onSwitchGenre,
+  onSwitchStructure,
   onSwitchMode,
 }: {
   currentTone: ToneType;
   setCurrentTone: (tone: ToneType) => void;
   currentPurpose: PurposeType;
   setCurrentPurpose: (purpose: PurposeType) => void;
+  currentGenre: GenreType;
+  setCurrentGenre: (genre: GenreType) => void;
+  currentStructure: StructureType;
+  setCurrentStructure: (structure: StructureType) => void;
   currentMode: ModeType;
   setCurrentMode: (mode: ModeType) => void;
   autocompleteState: AutocompleteState;
@@ -105,6 +117,8 @@ function AutocompletePlugin({
   onDismissSuggestion: () => void;
   onSwitchTone: (direction: 'up' | 'down') => void;
   onSwitchPurpose: (direction: 'up' | 'down') => void;
+  onSwitchGenre: (direction: 'up' | 'down') => void;
+  onSwitchStructure: (direction: 'up' | 'down') => void;
   onSwitchMode: (direction: 'left' | 'right') => void;
 }) {
   const [editor] = useLexicalComposerContext();
@@ -241,7 +255,7 @@ function AutocompletePlugin({
       setAutocompleteState(prev => ({ ...prev, isLoading: true }));
       
       try {
-        const suggestion = await autocompleteService.getSuggestion(debouncedContext, currentTone, currentPurpose);
+        const suggestion = await autocompleteService.getSuggestion(debouncedContext, currentTone, currentPurpose, currentGenre, currentStructure);
         if (suggestion && suggestion.trim()) {
           setAutocompleteState({
             suggestion: suggestion.trim(),
@@ -258,7 +272,7 @@ function AutocompletePlugin({
     };
 
     generateSuggestion();
-  }, [debouncedContext, currentTone, currentPurpose, setAutocompleteState]);
+  }, [debouncedContext, currentTone, currentPurpose, currentGenre, currentStructure, setAutocompleteState]);
 
   // Store cursor position for parent component
   useEffect(() => {
@@ -272,11 +286,15 @@ function AutocompletePlugin({
 function ControlsIndicator({ 
   tone, 
   purpose, 
+  genre,
+  structure,
   currentMode, 
   isLoading 
 }: { 
   tone: ToneType; 
   purpose: PurposeType; 
+  genre: GenreType;
+  structure: StructureType;
   currentMode: ModeType; 
   isLoading: boolean; 
 }) {
@@ -299,6 +317,30 @@ function ControlsIndicator({
     narrative: { label: 'Narrative', className: 'purpose-narrative' },
   };
 
+  const genreConfig = {
+    email: { label: 'Email', className: 'genre-email' },
+    essay: { label: 'Essay', className: 'genre-essay' },
+    'social post': { label: 'Social Post', className: 'genre-social-post' },
+    report: { label: 'Report', className: 'genre-report' },
+    story: { label: 'Story', className: 'genre-story' },
+    research: { label: 'Research', className: 'genre-research' },
+    sales: { label: 'Sales', className: 'genre-sales' },
+    education: { label: 'Education', className: 'genre-education' },
+  };
+
+  const structureConfig = {
+    chronological: { label: 'Chronological', className: 'structure-chronological' },
+    'problem-solution': { label: 'Problem-Solution', className: 'structure-problem-solution' },
+    'cause-effect': { label: 'Cause-Effect', className: 'structure-cause-effect' },
+    'compare-contrast': { label: 'Compare-Contrast', className: 'structure-compare-contrast' },
+    'question-answer': { label: 'Question-Answer', className: 'structure-question-answer' },
+    'counter-argument': { label: 'Counter-Argument', className: 'structure-counter-argument' },
+    'for and against': { label: 'For & Against', className: 'structure-for-against' },
+    list: { label: 'List', className: 'structure-list' },
+    'inverted pyramid': { label: 'Inverted Pyramid', className: 'structure-inverted-pyramid' },
+    narrative: { label: 'Narrative', className: 'structure-narrative' },
+  };
+
   return (
     <div className="flex items-center space-x-4">
       <div className="flex items-center space-x-2">
@@ -313,6 +355,18 @@ function ControlsIndicator({
           {purposeConfig[purpose].label}
         </span>
       </div>
+      <div className="flex items-center space-x-2">
+        <span className="text-sm text-gray-500">Genre:</span>
+        <span className={`tone-badge ${genreConfig[genre].className} ${currentMode === 'genre' ? 'ring-2 ring-blue-400' : ''}`}>
+          {genreConfig[genre].label}
+        </span>
+      </div>
+      <div className="flex items-center space-x-2">
+        <span className="text-sm text-gray-500">Structure:</span>
+        <span className={`tone-badge ${structureConfig[structure].className} ${currentMode === 'structure' ? 'ring-2 ring-blue-400' : ''}`}>
+          {structureConfig[structure].label}
+        </span>
+      </div>
       {isLoading && (
         <div className="loading-spinner"></div>
       )}
@@ -320,21 +374,11 @@ function ControlsIndicator({
   );
 }
 
-// Word count component
-function WordCounter({ text }: { text: string }) {
-  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-  const charCount = text.length;
 
-  return (
-    <div className="text-sm text-gray-500 dark:text-gray-400">
-      {wordCount} words, {charCount} characters
-    </div>
-  );
-}
 
 // Initial editor config
 const initialConfig = {
-  namespace: 'TabWriter',
+          namespace: 'Chameleon',
   theme: {
     text: {
       bold: 'font-bold',
@@ -350,6 +394,8 @@ const initialConfig = {
 export default function WritingEditor() {
   const [currentTone, setCurrentTone] = useState<ToneType>('professional');
   const [currentPurpose, setCurrentPurpose] = useState<PurposeType>('informative');
+  const [currentGenre, setCurrentGenre] = useState<GenreType>('email');
+  const [currentStructure, setCurrentStructure] = useState<StructureType>('chronological');
   const [currentMode, setCurrentMode] = useState<ModeType>('tone');
   const [autocompleteState, setAutocompleteState] = useState<AutocompleteState>({
     suggestion: '',
@@ -359,6 +405,8 @@ export default function WritingEditor() {
   const [editorText, setEditorText] = useState('');
   const tones: ToneType[] = ['professional', 'casual', 'creative', 'concise', 'witty', 'instructional', 'urgent', 'reflective'];
   const purposes: PurposeType[] = ['persuasive', 'informative', 'descriptive', 'flattering', 'narrative'];
+  const genres: GenreType[] = ['email', 'essay', 'social post', 'report', 'story', 'research', 'sales', 'education'];
+  const structures: StructureType[] = ['chronological', 'problem-solution', 'cause-effect', 'compare-contrast', 'question-answer', 'counter-argument', 'for and against', 'list', 'inverted pyramid', 'narrative'];
 
   // Handle editor text changes
   const handleEditorTextChange = useCallback((text: string) => {
@@ -393,12 +441,45 @@ export default function WritingEditor() {
     setCurrentPurpose(purposes[newIndex]);
   }, [currentPurpose, purposes]);
 
-  // Handle mode switching
-  const handleSwitchMode = useCallback((direction: 'left' | 'right') => {
-    if (direction === 'right') {
-      setCurrentMode(currentMode === 'tone' ? 'purpose' : 'tone');
+  // Handle genre switching
+  const handleSwitchGenre = useCallback((direction: 'up' | 'down') => {
+    const currentIndex = genres.indexOf(currentGenre);
+    let newIndex;
+    
+    if (direction === 'up') {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : genres.length - 1;
     } else {
-      setCurrentMode(currentMode === 'purpose' ? 'tone' : 'purpose');
+      newIndex = currentIndex < genres.length - 1 ? currentIndex + 1 : 0;
+    }
+    
+    setCurrentGenre(genres[newIndex]);
+  }, [currentGenre, genres]);
+
+  // Handle structure switching
+  const handleSwitchStructure = useCallback((direction: 'up' | 'down') => {
+    const currentIndex = structures.indexOf(currentStructure);
+    let newIndex;
+    
+    if (direction === 'up') {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : structures.length - 1;
+    } else {
+      newIndex = currentIndex < structures.length - 1 ? currentIndex + 1 : 0;
+    }
+    
+    setCurrentStructure(structures[newIndex]);
+  }, [currentStructure, structures]);
+
+  // Handle mode switching (cycles through tone -> purpose -> genre -> structure)
+  const handleSwitchMode = useCallback((direction: 'left' | 'right') => {
+    const modes: ModeType[] = ['tone', 'purpose', 'genre', 'structure'];
+    const currentIndex = modes.indexOf(currentMode);
+    
+    if (direction === 'right') {
+      const newIndex = currentIndex < modes.length - 1 ? currentIndex + 1 : 0;
+      setCurrentMode(modes[newIndex]);
+    } else {
+      const newIndex = currentIndex > 0 ? currentIndex - 1 : modes.length - 1;
+      setCurrentMode(modes[newIndex]);
     }
   }, [currentMode]);
 
@@ -453,16 +534,24 @@ export default function WritingEditor() {
       event.stopPropagation();
       if (currentMode === 'tone') {
         handleSwitchTone('up');
-      } else {
+      } else if (currentMode === 'purpose') {
         handleSwitchPurpose('up');
+      } else if (currentMode === 'genre') {
+        handleSwitchGenre('up');
+      } else {
+        handleSwitchStructure('up');
       }
     } else if (isCtrlOrCmd && event.key === 'ArrowDown') {
       event.preventDefault();
       event.stopPropagation();
       if (currentMode === 'tone') {
         handleSwitchTone('down');
-      } else {
+      } else if (currentMode === 'purpose') {
         handleSwitchPurpose('down');
+      } else if (currentMode === 'genre') {
+        handleSwitchGenre('down');
+      } else {
+        handleSwitchStructure('down');
       }
     } else if (event.key === 'Escape') {
       event.preventDefault();
@@ -477,6 +566,8 @@ export default function WritingEditor() {
     handleDismissSuggestion, 
     handleSwitchTone, 
     handleSwitchPurpose, 
+    handleSwitchGenre,
+    handleSwitchStructure,
     handleSwitchMode
   ]);
 
@@ -495,12 +586,13 @@ export default function WritingEditor() {
                   <ControlsIndicator 
             tone={currentTone} 
             purpose={currentPurpose} 
+            genre={currentGenre}
+            structure={currentStructure}
             currentMode={currentMode} 
             isLoading={autocompleteState.isLoading} 
           />
         
         <div className="flex items-center space-x-4">
-          <WordCounter text={editorText} />
           <button
             onClick={copyToClipboard}
             className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
@@ -517,13 +609,13 @@ export default function WritingEditor() {
             contentEditable={
               <ContentEditable
                 className="editor-inner min-h-96 outline-none resize-none"
-                placeholder="Start writing your text here..."
+                placeholder="Start vibe-writing here..."
                 onKeyDown={handleKeyDown}
               />
             }
             placeholder={
               <div className="editor-placeholder">
-                Start writing your text here...
+                Start vibe-writing here...
               </div>
             }
             ErrorBoundary={LexicalErrorBoundary}
@@ -534,6 +626,10 @@ export default function WritingEditor() {
             setCurrentTone={setCurrentTone}
             currentPurpose={currentPurpose}
             setCurrentPurpose={setCurrentPurpose}
+            currentGenre={currentGenre}
+            setCurrentGenre={setCurrentGenre}
+            currentStructure={currentStructure}
+            setCurrentStructure={setCurrentStructure}
             currentMode={currentMode}
             setCurrentMode={setCurrentMode}
             autocompleteState={autocompleteState}
@@ -543,6 +639,8 @@ export default function WritingEditor() {
             onDismissSuggestion={handleDismissSuggestion}
             onSwitchTone={handleSwitchTone}
             onSwitchPurpose={handleSwitchPurpose}
+            onSwitchGenre={handleSwitchGenre}
+            onSwitchStructure={handleSwitchStructure}
             onSwitchMode={handleSwitchMode}
           />
         </LexicalComposer>
