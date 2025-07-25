@@ -14,14 +14,18 @@ import {
   $insertNodes,
   $getNodeByKey,
   COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_HIGH,
   KEY_TAB_COMMAND,
   KEY_ESCAPE_COMMAND,
+  KEY_ENTER_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
 } from 'lexical';
 
 // Types
-type ToneType = 'professional' | 'casual' | 'creative' | 'concise';
+type ToneType = 'professional' | 'casual' | 'creative' | 'concise' | 'witty' | 'instructional' | 'urgent' | 'reflective';
+type PurposeType = 'persuasive' | 'informative' | 'descriptive' | 'flattering' | 'narrative';
+type ModeType = 'tone' | 'purpose';
 
 interface AutocompleteState {
   suggestion: string;
@@ -31,14 +35,14 @@ interface AutocompleteState {
 
 // API service
 const autocompleteService = {
-  async getSuggestion(text: string, tone: ToneType): Promise<string> {
+  async getSuggestion(text: string, tone: ToneType, purpose: PurposeType): Promise<string> {
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/autocomplete', {
+      const response = await fetch('/api/autocomplete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text, tone }),
+        body: JSON.stringify({ text, tone, purpose }),
       });
 
       if (!response.ok) {
@@ -75,21 +79,33 @@ function useDebounce<T>(value: T, delay: number): T {
 function AutocompletePlugin({
   currentTone,
   setCurrentTone,
+  currentPurpose,
+  setCurrentPurpose,
+  currentMode,
+  setCurrentMode,
   autocompleteState,
   setAutocompleteState,
   onEditorTextChange,
   onAcceptSuggestion,
   onDismissSuggestion,
   onSwitchTone,
+  onSwitchPurpose,
+  onSwitchMode,
 }: {
   currentTone: ToneType;
   setCurrentTone: (tone: ToneType) => void;
+  currentPurpose: PurposeType;
+  setCurrentPurpose: (purpose: PurposeType) => void;
+  currentMode: ModeType;
+  setCurrentMode: (mode: ModeType) => void;
   autocompleteState: AutocompleteState;
   setAutocompleteState: React.Dispatch<React.SetStateAction<AutocompleteState>>;
   onEditorTextChange: (text: string) => void;
   onAcceptSuggestion: () => void;
   onDismissSuggestion: () => void;
   onSwitchTone: (direction: 'up' | 'down') => void;
+  onSwitchPurpose: (direction: 'up' | 'down') => void;
+  onSwitchMode: (direction: 'left' | 'right') => void;
 }) {
   const [editor] = useLexicalComposerContext();
   const [contextText, setContextText] = useState('');
@@ -103,6 +119,33 @@ function AutocompletePlugin({
       (window as any).__lexicalEditor = editor;
     }
   }, [editor, onAcceptSuggestion]);
+
+  // Register Enter key command listener to handle Ctrl+Enter
+  useEffect(() => {
+    if (!editor) return;
+
+    const removeEnterListener = editor.registerCommand(
+      KEY_ENTER_COMMAND,
+      (event: KeyboardEvent | null) => {
+        if (!event) return false;
+        
+        // Check for Ctrl/Cmd + Enter
+        const isCtrlOrCmd = event.ctrlKey || event.metaKey;
+        if (isCtrlOrCmd) {
+          // Prevent the Enter from creating a newline
+          if (autocompleteState.isVisible && autocompleteState.suggestion) {
+            onAcceptSuggestion();
+          }
+          return true; // Return true to prevent default behavior
+        }
+        
+        return false; // Let normal Enter behavior proceed
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+
+    return removeEnterListener;
+  }, [editor, autocompleteState.isVisible, autocompleteState.suggestion, onAcceptSuggestion]);
 
   // Get text context around cursor position
   const getContextAroundCursor = (fullText: string, cursorOffset: number): string => {
@@ -198,7 +241,7 @@ function AutocompletePlugin({
       setAutocompleteState(prev => ({ ...prev, isLoading: true }));
       
       try {
-        const suggestion = await autocompleteService.getSuggestion(debouncedContext, currentTone);
+        const suggestion = await autocompleteService.getSuggestion(debouncedContext, currentTone, currentPurpose);
         if (suggestion && suggestion.trim()) {
           setAutocompleteState({
             suggestion: suggestion.trim(),
@@ -215,7 +258,7 @@ function AutocompletePlugin({
     };
 
     generateSuggestion();
-  }, [debouncedContext, currentTone, setAutocompleteState]);
+  }, [debouncedContext, currentTone, currentPurpose, setAutocompleteState]);
 
   // Store cursor position for parent component
   useEffect(() => {
@@ -225,20 +268,51 @@ function AutocompletePlugin({
   return null;
 }
 
-// Tone indicator component
-function ToneIndicator({ tone, isLoading }: { tone: ToneType; isLoading: boolean }) {
+// Controls indicator component
+function ControlsIndicator({ 
+  tone, 
+  purpose, 
+  currentMode, 
+  isLoading 
+}: { 
+  tone: ToneType; 
+  purpose: PurposeType; 
+  currentMode: ModeType; 
+  isLoading: boolean; 
+}) {
   const toneConfig = {
     professional: { label: 'Professional', className: 'tone-professional' },
     casual: { label: 'Casual', className: 'tone-casual' },
     creative: { label: 'Creative', className: 'tone-creative' },
     concise: { label: 'Concise', className: 'tone-concise' },
+    witty: { label: 'Witty', className: 'tone-witty' },
+    instructional: { label: 'Instructional', className: 'tone-instructional' },
+    urgent: { label: 'Urgent', className: 'tone-urgent' },
+    reflective: { label: 'Reflective', className: 'tone-reflective' },
+  };
+
+  const purposeConfig = {
+    persuasive: { label: 'Persuasive', className: 'purpose-persuasive' },
+    informative: { label: 'Informative', className: 'purpose-informative' },
+    descriptive: { label: 'Descriptive', className: 'purpose-descriptive' },
+    flattering: { label: 'Flattering', className: 'purpose-flattering' },
+    narrative: { label: 'Narrative', className: 'purpose-narrative' },
   };
 
   return (
-    <div className="flex items-center space-x-2">
-      <span className={`tone-badge ${toneConfig[tone].className}`}>
-        {toneConfig[tone].label}
-      </span>
+    <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2">
+        <span className="text-sm text-gray-500">Tone:</span>
+        <span className={`tone-badge ${toneConfig[tone].className} ${currentMode === 'tone' ? 'ring-2 ring-blue-400' : ''}`}>
+          {toneConfig[tone].label}
+        </span>
+      </div>
+      <div className="flex items-center space-x-2">
+        <span className="text-sm text-gray-500">Purpose:</span>
+        <span className={`tone-badge ${purposeConfig[purpose].className} ${currentMode === 'purpose' ? 'ring-2 ring-blue-400' : ''}`}>
+          {purposeConfig[purpose].label}
+        </span>
+      </div>
       {isLoading && (
         <div className="loading-spinner"></div>
       )}
@@ -275,13 +349,16 @@ const initialConfig = {
 // Main WritingEditor component
 export default function WritingEditor() {
   const [currentTone, setCurrentTone] = useState<ToneType>('professional');
+  const [currentPurpose, setCurrentPurpose] = useState<PurposeType>('informative');
+  const [currentMode, setCurrentMode] = useState<ModeType>('tone');
   const [autocompleteState, setAutocompleteState] = useState<AutocompleteState>({
     suggestion: '',
     isVisible: false,
     isLoading: false,
   });
   const [editorText, setEditorText] = useState('');
-  const tones: ToneType[] = ['professional', 'casual', 'creative', 'concise'];
+  const tones: ToneType[] = ['professional', 'casual', 'creative', 'concise', 'witty', 'instructional', 'urgent', 'reflective'];
+  const purposes: PurposeType[] = ['persuasive', 'informative', 'descriptive', 'flattering', 'narrative'];
 
   // Handle editor text changes
   const handleEditorTextChange = useCallback((text: string) => {
@@ -301,6 +378,29 @@ export default function WritingEditor() {
     
     setCurrentTone(tones[newIndex]);
   }, [currentTone, tones]);
+
+  // Handle purpose switching
+  const handleSwitchPurpose = useCallback((direction: 'up' | 'down') => {
+    const currentIndex = purposes.indexOf(currentPurpose);
+    let newIndex;
+    
+    if (direction === 'up') {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : purposes.length - 1;
+    } else {
+      newIndex = currentIndex < purposes.length - 1 ? currentIndex + 1 : 0;
+    }
+    
+    setCurrentPurpose(purposes[newIndex]);
+  }, [currentPurpose, purposes]);
+
+  // Handle mode switching
+  const handleSwitchMode = useCallback((direction: 'left' | 'right') => {
+    if (direction === 'right') {
+      setCurrentMode(currentMode === 'tone' ? 'purpose' : 'tone');
+    } else {
+      setCurrentMode(currentMode === 'purpose' ? 'tone' : 'purpose');
+    }
+  }, [currentMode]);
 
   // Accept suggestion
   const handleAcceptSuggestion = useCallback(() => {
@@ -327,25 +427,58 @@ export default function WritingEditor() {
 
   // Handle keyboard events
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (!autocompleteState.isVisible || !autocompleteState.suggestion) return;
-
     // Check for Ctrl/Cmd key combinations
     const isCtrlOrCmd = event.ctrlKey || event.metaKey;
 
-    if (isCtrlOrCmd && event.key === 'Enter') {
+    // Handle mode switching (works even when no suggestion is visible)
+    if (isCtrlOrCmd && event.key === 'ArrowLeft') {
       event.preventDefault();
-      handleAcceptSuggestion();
-    } else if (isCtrlOrCmd && event.key === 'ArrowUp') {
+      event.stopPropagation();
+      handleSwitchMode('left');
+      return;
+    } else if (isCtrlOrCmd && event.key === 'ArrowRight') {
       event.preventDefault();
-      handleSwitchTone('up');
+      event.stopPropagation();
+      handleSwitchMode('right');
+      return;
+    }
+
+    // Note: Ctrl+Enter is now handled by Lexical's command system above
+
+    // Handle other suggestion-related shortcuts only when suggestion is visible
+    if (!autocompleteState.isVisible || !autocompleteState.suggestion) return;
+
+    if (isCtrlOrCmd && event.key === 'ArrowUp') {
+      event.preventDefault();
+      event.stopPropagation();
+      if (currentMode === 'tone') {
+        handleSwitchTone('up');
+      } else {
+        handleSwitchPurpose('up');
+      }
     } else if (isCtrlOrCmd && event.key === 'ArrowDown') {
       event.preventDefault();
-      handleSwitchTone('down');
+      event.stopPropagation();
+      if (currentMode === 'tone') {
+        handleSwitchTone('down');
+      } else {
+        handleSwitchPurpose('down');
+      }
     } else if (event.key === 'Escape') {
       event.preventDefault();
+      event.stopPropagation();
       handleDismissSuggestion();
     }
-  }, [autocompleteState.isVisible, autocompleteState.suggestion, handleAcceptSuggestion, handleDismissSuggestion, handleSwitchTone]);
+  }, [
+    autocompleteState.isVisible, 
+    autocompleteState.suggestion, 
+    currentMode, 
+    handleAcceptSuggestion, 
+    handleDismissSuggestion, 
+    handleSwitchTone, 
+    handleSwitchPurpose, 
+    handleSwitchMode
+  ]);
 
   // Copy to clipboard function
   const copyToClipboard = useCallback(() => {
@@ -359,7 +492,12 @@ export default function WritingEditor() {
     <div className="w-full">
       {/* Toolbar */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-        <ToneIndicator tone={currentTone} isLoading={autocompleteState.isLoading} />
+                  <ControlsIndicator 
+            tone={currentTone} 
+            purpose={currentPurpose} 
+            currentMode={currentMode} 
+            isLoading={autocompleteState.isLoading} 
+          />
         
         <div className="flex items-center space-x-4">
           <WordCounter text={editorText} />
@@ -394,12 +532,18 @@ export default function WritingEditor() {
           <AutocompletePlugin
             currentTone={currentTone}
             setCurrentTone={setCurrentTone}
+            currentPurpose={currentPurpose}
+            setCurrentPurpose={setCurrentPurpose}
+            currentMode={currentMode}
+            setCurrentMode={setCurrentMode}
             autocompleteState={autocompleteState}
             setAutocompleteState={setAutocompleteState}
             onEditorTextChange={handleEditorTextChange}
             onAcceptSuggestion={handleAcceptSuggestion}
             onDismissSuggestion={handleDismissSuggestion}
             onSwitchTone={handleSwitchTone}
+            onSwitchPurpose={handleSwitchPurpose}
+            onSwitchMode={handleSwitchMode}
           />
         </LexicalComposer>
         
