@@ -581,6 +581,16 @@ export default function WritingEditor({ onAuthRequired }: WritingEditorProps) {
     onAuthRequired
   ]);
 
+  // Handle copy events to restrict copying when not authenticated
+  const handleCopy = useCallback((event: React.ClipboardEvent) => {
+    if (!user) {
+      event.preventDefault();
+      onAuthRequired?.();
+      return;
+    }
+    // Allow copy if authenticated
+  }, [user, onAuthRequired]);
+
   // Copy to clipboard function
   const copyToClipboard = useCallback(() => {
     if (!user) {
@@ -631,6 +641,7 @@ export default function WritingEditor({ onAuthRequired }: WritingEditorProps) {
                 className="editor-inner min-h-96 outline-none resize-none"
                 placeholder="Start vibe-writing here..."
                 onKeyDown={handleKeyDown}
+                onCopy={handleCopy}
               />
             }
             placeholder={
