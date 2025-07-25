@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai/index.mjs';
+import OpenAI from 'openai';
 
 // Initialize OpenAI client
 const openai = new OpenAI({

@@ -35,12 +35,12 @@ backend/ENV/
 backend/env.bak/
 backend/venv.bak/
 
-# Frontend
-frontend/.next/
-frontend/out/
-frontend/build/
-frontend/dist/
-frontend/.vercel/
+# Next App
+next-app/.next/
+next-app/out/
+next-app/build/
+next-app/dist/
+next-app/.vercel/
 
 # Environment variables
 .env

@@ -1,4 +1,4 @@
-# Chameleon - AI-assisted writing that retains your voice and style by autocompleting thoughts
+Chameleon - AI-assisted writing that retains your voice and style by autocompleting thoughts
 
 ```bash
 # Clone the repository
@@ -9,11 +9,11 @@ cd chameleon
 chmod +x setup.sh
 ./setup.sh
 
-# Add your OpenAI API key to frontend/.env.local
+# Add your OpenAI API key to next-app/.env.local
 # OPENAI_API_KEY=your_openai_api_key_here
 
 # Start the application
-cd frontend
+cd next-app
 npm run dev
 ```
 
@@ -22,7 +22,7 @@ npm run dev
 ```bash
 # Clone the repository
 git clone <your-repo-url>
-cd tab-writer/frontend
+cd tab-writer/next-app
 
 # Install dependencies
 npm install
@@ -57,7 +57,7 @@ The application will be running on `http://localhost:3000`
 
 ### Environment Variables
 
-Create a `.env.local` file in the `frontend/` directory:
+Create a `.env.local` file in the `next-app/` directory:
 
 ```env
 # Required
@@ -72,7 +72,7 @@ NODE_ENV=development
 ### Development Commands
 
 ```bash
-cd frontend
+cd next-app
 
 # Install dependencies
 npm install

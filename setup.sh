@@ -20,9 +20,9 @@ fi
 
 echo -e "${GREEN}✅ Prerequisites check passed${NC}"
 
-# Setup Frontend (now includes backend functionality)
+# Setup Next App (now includes backend functionality)
 echo -e "\n${BLUE}🔧 Setting up Chameleon Application...${NC}"
-cd frontend
+cd next-app
 
 # Install Node.js dependencies
 echo "Installing dependencies..."
@@ -32,7 +32,7 @@ npm install
 if [ ! -f .env.local ]; then
     echo "Creating environment file..."
     cp env.example .env.local
-    echo -e "${YELLOW}⚠️  Please edit frontend/.env.local and add your OpenAI API key${NC}"
+    echo -e "${YELLOW}⚠️  Please edit next-app/.env.local and add your OpenAI API key${NC}"
     echo -e "${YELLOW}   OPENAI_API_KEY=your_openai_api_key_here${NC}"
 else
     echo "Environment file already exists"
@@ -42,8 +42,8 @@ cd ..
 
 echo -e "\n${GREEN}🎉 Setup complete!${NC}"
 echo -e "\n${BLUE}📋 Next Steps:${NC}"
-echo "1. Add your OpenAI API key to frontend/.env.local"
-echo "2. Start the application: cd frontend && npm run dev"
+echo "1. Add your OpenAI API key to next-app/.env.local"
+echo "2. Start the application: cd next-app && npm run dev"
 echo "3. Open http://localhost:3000 in your browser"
 
 echo -e "\n${YELLOW}💡 Pro Tips:${NC}"
