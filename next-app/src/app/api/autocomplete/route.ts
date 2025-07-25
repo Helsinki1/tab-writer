@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy OpenAI client initialization
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openaiClient;
+}
 
 // Tone prompts configuration
 const TONE_PROMPTS = {
@@ -83,6 +90,9 @@ interface AutocompleteResponse {
 
 async function generateAutocomplete(text: string, tone: ToneType, purpose: PurposeType, genre: GenreType, structure: StructureType): Promise<string> {
   try {
+    // Get lazy-initialized OpenAI client
+    const openai = getOpenAIClient();
+    
     // Check cache first
     const cacheKey = `${text}_${tone}_${purpose}_${genre}_${structure}`;
     const currentTime = Date.now();
