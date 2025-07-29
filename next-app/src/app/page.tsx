@@ -22,7 +22,7 @@ export default function Home() {
         <Header />
         
         <div className="transform origin-top" style={{ transform: 'scale(1.33)' }}>
-          <main className="container mx-auto px-4 py-8">
+        <main className="container mx-auto px-4 py-8">
             <div className="max-w-5xl mx-auto">
             {/* Hero Section */}
             <div className="text-center mb-8">

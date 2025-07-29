@@ -15,7 +15,7 @@ function getOpenAIClient(): OpenAI {
 
 // Tone prompts configuration
 const TONE_PROMPTS = {
-  professional: "professional, business-appropriate tone. Keep it formal, clear, and polished.",
+  professional: "professional, business-appropriate tone. Keep it formal and polished.",
   casual: "casual, friendly conversational tone. Keep it relaxed and approachable.",
   creative: "creative, engaging, and expressive tone. Be imaginative and captivating.",
   concise: "concise, direct, and brief manner. Be clear and to the point.",
@@ -27,37 +27,37 @@ const TONE_PROMPTS = {
 
 // Purpose prompts configuration
 const PURPOSE_PROMPTS = {
-  persuasive: "with the purpose of persuading and convincing the reader. Use compelling arguments and persuasive language.",
-  informative: "with the purpose of informing and educating the reader. Provide clear, factual, and useful information.",
-  descriptive: "with the purpose of describing and painting a vivid picture. Use rich details and sensory language.",
-  flattering: "with the purpose of complimenting and praising. Use positive, appreciative, and admiring language.",
+  persuasive: "with the purpose of persuading the reader. Use compelling and persuasive language.",
+  informative: "with the purpose of informing the reader. Provide factual and useful information.",
+  descriptive: "with the purpose of describing a vivid picture. Use rich details and sensory language.",
+  flattering: "with the purpose of complimenting and praising. Use appreciative and admiring language.",
   narrative: "with the purpose of telling a story or recounting events. Use narrative techniques and engaging storytelling."
 } as const;
 
 // Genre prompts configuration
 const GENRE_PROMPTS = {
-  email: "in an email format. Use appropriate email conventions, greetings, and professional structure.",
+  email: "in the tone of an email. Use appropriate email professional style.",
   essay: "in an essay format. Use academic structure with clear arguments, evidence, and formal language.",
-  "social post": "as a social media post. Keep it engaging, concise, and suitable for social platforms.",
-  report: "in a report format. Use factual, objective language with clear sections and professional presentation.",
-  story: "as a story or narrative. Use storytelling elements, character development, and engaging plot structure.",
-  research: "in a research format. Use scholarly language, citations, evidence-based arguments, and academic rigor.",
-  sales: "as sales content. Use persuasive techniques, highlight benefits, and include compelling calls-to-action.",
+  "social post": "as a social media post. Keep it engaging and concise for social platforms.",
+  report: "in a report format. Use factual, objective language with clear presentation.",
+  story: "as a story or narrative. Use storytelling elements and engaging plot structure.",
+  research: "in a research format. Use scholarly language, evidence-based arguments, and rigor.",
+  sales: "as sales content. Use persuasive techniques, highlight benefits, and compelling calls-to-action.",
   education: "in an educational format. Use clear explanations, examples, and structured learning approaches."
 } as const;
 
 // Structure prompts configuration
 const STRUCTURE_PROMPTS = {
-  chronological: "using chronological structure. Present information in time order, following a clear sequence of events.",
-  "problem-solution": "using problem-solution structure. Identify issues clearly and present effective solutions.",
-  "cause-effect": "using cause-effect structure. Show relationships between causes and their resulting effects.",
+  chronological: "using chronological structure. Present information in a clear sequence of events.",
+  "problem-solution": "using problem-solution structure. Identify issues clearly and present solutions.",
+  "cause-effect": "using cause-effect structure. Show relationships between causes and effects.",
   "compare-contrast": "using compare-contrast structure. Highlight similarities and differences between concepts.",
-  "question-answer": "using question-answer structure. Pose relevant questions and provide clear, direct answers.",
-  "counter-argument": "using counter-argument structure. Present opposing viewpoints and address counterpoints effectively.",
+  "question-answer": "using question-answer structure. Pose relevant questions and provide clear answers.",
+  "counter-argument": "using counter-argument structure. Present opposing views and address counterpoints.",
   "for and against": "using for-and-against structure. Present balanced arguments on both sides of the issue.",
-  list: "using list structure. Present information as comma-separated items or ideas within sentences.",
-  "inverted pyramid": "using inverted pyramid structure. Start with the most important information first, then supporting details.",
-  narrative: "using narrative structure. Tell the story with beginning, middle, and end, using storytelling techniques."
+  list: "using list structure. Present information as comma-separated items or ideas.",
+  "inverted pyramid": "using inverted pyramid structure. Start with the most important information first, then details.",
+  narrative: "using narrative structure. Continue the narrative with compelling storytelling techniques."
 } as const;
 
 type ToneType = keyof typeof TONE_PROMPTS;
@@ -111,7 +111,7 @@ async function generateAutocomplete(text: string, tone: ToneType, purpose: Purpo
     
     // Create combined system prompt
     const contextPrompt = context ? `\n\nAdditional context to consider: ${context}` : '';
-    const systemPrompt = `You are a writing assistant. Continue the given text naturally in a ${tonePrompt} Write ${purposePrompt} Format it ${genrePrompt} Organize it ${structurePrompt}${contextPrompt} Provide only the next few words or phrase that would logically follow. Do not repeat the input text.`;
+    const systemPrompt = `You are a writing assistant. Help the user continue writing their message in a ${tonePrompt} Write ${purposePrompt} Format it ${genrePrompt} Organize it ${structurePrompt} And it must make progress towards this goal:${contextPrompt} Provide only the next 1-2 sentences that would logically follow or complete the thought. DO NOT REPEAT THE INPUT TEXT.`;
     
     // Create OpenAI request
     const response = await openai.chat.completions.create({

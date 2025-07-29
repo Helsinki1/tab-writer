@@ -229,9 +229,11 @@ function AutocompletePlugin({
               const editorRect = root?.getBoundingClientRect();
               
               if (rect && editorRect && rect.height > 0) {
+                // Account for the 1.33x scale transform applied to the main content
+                const scaleFactor = 1.33;
                 setCursorPosition({
-                  x: Math.max(0, rect.left - editorRect.left),
-                  y: Math.max(0, rect.bottom - editorRect.top + 5)
+                  x: Math.max(20, (rect.left - editorRect.left + 10) / scaleFactor),
+                  y: Math.max(20, (rect.bottom - editorRect.top - 10) / scaleFactor)
                 });
               } else {
                 // Fallback positioning
@@ -711,7 +713,7 @@ export default function WritingEditor({ onAuthRequired }: WritingEditorProps) {
             className="absolute pointer-events-none z-10"
             style={{
               left: `${(window as any).__cursorPosition?.x || 20}px`,
-              top: `${((window as any).__cursorPosition?.y || 20) + 5}px`,
+              top: `${(window as any).__cursorPosition?.y || 20}px`,
             }}
           >
             <div className="suggestion-text bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 max-w-xs">
