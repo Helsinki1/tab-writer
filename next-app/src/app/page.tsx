@@ -21,8 +21,9 @@ export default function Home() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
         <Header />
         
-        <main className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
+        <div className="transform origin-top" style={{ transform: 'scale(1.33)' }}>
+          <main className="container mx-auto px-4 py-8">
+            <div className="max-w-5xl mx-auto">
             {/* Hero Section */}
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
@@ -113,6 +114,7 @@ export default function Home() {
             </div>
           </div>
         </main>
+        </div>
 
         {/* Authentication Modal */}
         <AuthModal 

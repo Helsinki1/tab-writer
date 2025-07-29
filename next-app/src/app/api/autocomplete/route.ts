@@ -75,6 +75,7 @@ interface AutocompleteRequest {
   purpose: string;
   genre: string;
   structure: string;
+  context?: string;
 }
 
 interface AutocompleteResponse {
@@ -88,13 +89,13 @@ interface AutocompleteResponse {
   details?: string;
 }
 
-async function generateAutocomplete(text: string, tone: ToneType, purpose: PurposeType, genre: GenreType, structure: StructureType): Promise<string> {
+async function generateAutocomplete(text: string, tone: ToneType, purpose: PurposeType, genre: GenreType, structure: StructureType, context?: string): Promise<string> {
   try {
     // Get lazy-initialized OpenAI client
     const openai = getOpenAIClient();
     
     // Check cache first
-    const cacheKey = `${text}_${tone}_${purpose}_${genre}_${structure}`;
+    const cacheKey = `${text}_${tone}_${purpose}_${genre}_${structure}_${context || ''}`;
     const currentTime = Date.now();
     
     const cached = requestCache.get(cacheKey);
@@ -109,7 +110,8 @@ async function generateAutocomplete(text: string, tone: ToneType, purpose: Purpo
     const structurePrompt = STRUCTURE_PROMPTS[structure] || STRUCTURE_PROMPTS.chronological;
     
     // Create combined system prompt
-    const systemPrompt = `You are a writing assistant. Continue the given text naturally in a ${tonePrompt} Write ${purposePrompt} Format it ${genrePrompt} Organize it ${structurePrompt} Provide only the next few words or phrase that would logically follow. Do not repeat the input text.`;
+    const contextPrompt = context ? `\n\nAdditional context to consider: ${context}` : '';
+    const systemPrompt = `You are a writing assistant. Continue the given text naturally in a ${tonePrompt} Write ${purposePrompt} Format it ${genrePrompt} Organize it ${structurePrompt}${contextPrompt} Provide only the next few words or phrase that would logically follow. Do not repeat the input text.`;
     
     // Create OpenAI request
     const response = await openai.chat.completions.create({
@@ -178,6 +180,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Autocompl
     const purpose = data.purpose.trim().toLowerCase() as PurposeType;
     const genre = data.genre.trim().toLowerCase() as GenreType;
     const structure = data.structure.trim().toLowerCase() as StructureType;
+    const context = data.context?.trim() || undefined;
     
     // Validate inputs
     if (!text) {
@@ -216,7 +219,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Autocompl
     }
     
     // Generate suggestion
-    const suggestion = await generateAutocomplete(text, tone, purpose, genre, structure);
+    const suggestion = await generateAutocomplete(text, tone, purpose, genre, structure, context);
     
     return NextResponse.json({
       suggestion,

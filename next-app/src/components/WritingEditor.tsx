@@ -42,14 +42,14 @@ interface WritingEditorProps {
 
 // API service
 const autocompleteService = {
-  async getSuggestion(text: string, tone: ToneType, purpose: PurposeType, genre: GenreType, structure: StructureType): Promise<string> {
+  async getSuggestion(text: string, tone: ToneType, purpose: PurposeType, genre: GenreType, structure: StructureType, context?: string): Promise<string> {
     try {
       const response = await fetch('/api/autocomplete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text, tone, purpose, genre, structure }),
+        body: JSON.stringify({ text, tone, purpose, genre, structure, context }),
       });
 
       if (!response.ok) {
@@ -104,6 +104,7 @@ function AutocompletePlugin({
   onSwitchGenre,
   onSwitchStructure,
   onSwitchMode,
+  contextText,
 }: {
   currentTone: ToneType;
   setCurrentTone: (tone: ToneType) => void;
@@ -125,11 +126,12 @@ function AutocompletePlugin({
   onSwitchGenre: (direction: 'up' | 'down') => void;
   onSwitchStructure: (direction: 'up' | 'down') => void;
   onSwitchMode: (direction: 'left' | 'right') => void;
+  contextText: string;
 }) {
   const [editor] = useLexicalComposerContext();
-  const [contextText, setContextText] = useState('');
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
-  const debouncedContext = useDebounce(contextText, 500);
+  const [cursorContext, setCursorContext] = useState('');
+  const debouncedContext = useDebounce(cursorContext, 500);
 
   // Provide editor reference to parent component
   useEffect(() => {
@@ -213,8 +215,9 @@ function AutocompletePlugin({
           }
           
           // Get focused context around cursor
-          const context = getContextAroundCursor(fullText, textOffset);
-          setContextText(context);
+          const extractedContext = getContextAroundCursor(fullText, textOffset);
+          setCursorContext(extractedContext);
+          // Note: contextText is now passed from parent component
           
           // Update cursor position for overlay positioning
           try {
@@ -260,7 +263,7 @@ function AutocompletePlugin({
       setAutocompleteState(prev => ({ ...prev, isLoading: true }));
       
       try {
-        const suggestion = await autocompleteService.getSuggestion(debouncedContext, currentTone, currentPurpose, currentGenre, currentStructure);
+        const suggestion = await autocompleteService.getSuggestion(debouncedContext, currentTone, currentPurpose, currentGenre, currentStructure, contextText);
         if (suggestion && suggestion.trim()) {
           setAutocompleteState({
             suggestion: suggestion.trim(),
@@ -277,7 +280,7 @@ function AutocompletePlugin({
     };
 
     generateSuggestion();
-  }, [debouncedContext, currentTone, currentPurpose, currentGenre, currentStructure, setAutocompleteState]);
+  }, [debouncedContext, currentTone, currentPurpose, currentGenre, currentStructure, contextText, setAutocompleteState]);
 
   // Store cursor position for parent component
   useEffect(() => {
@@ -409,6 +412,8 @@ export default function WritingEditor({ onAuthRequired }: WritingEditorProps) {
     isLoading: false,
   });
   const [editorText, setEditorText] = useState('');
+  const [contextText, setContextText] = useState('');
+  const [showContextEditor, setShowContextEditor] = useState(false);
   const tones: ToneType[] = ['professional', 'casual', 'creative', 'concise', 'witty', 'instructional', 'urgent', 'reflective'];
   const purposes: PurposeType[] = ['persuasive', 'informative', 'descriptive', 'flattering', 'narrative'];
   const genres: GenreType[] = ['email', 'essay', 'social post', 'report', 'story', 'research', 'sales', 'education'];
@@ -619,6 +624,13 @@ export default function WritingEditor({ onAuthRequired }: WritingEditorProps) {
         
         <div className="flex items-center space-x-4">
           <button
+            onClick={() => setShowContextEditor(!showContextEditor)}
+            className="px-3 py-1 text-sm rounded transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+            title="Add context to help with writing suggestions"
+          >
+            {showContextEditor ? 'Hide Context' : 'Add Context'}
+          </button>
+          <button
             onClick={copyToClipboard}
             className={`px-3 py-1 text-sm rounded transition-colors ${
               user 
@@ -631,6 +643,22 @@ export default function WritingEditor({ onAuthRequired }: WritingEditorProps) {
           </button>
         </div>
       </div>
+
+      {/* Context Editor */}
+      {showContextEditor && (
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Additional Context (helps improve suggestions):
+          </label>
+          <textarea
+            value={contextText}
+            onChange={(e) => setContextText(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none"
+            placeholder="Add any context that would help with writing suggestions (e.g., audience, purpose, background information, etc.)"
+            rows={3}
+          />
+        </div>
+      )}
 
       {/* Editor */}
       <div className="relative">
@@ -673,6 +701,7 @@ export default function WritingEditor({ onAuthRequired }: WritingEditorProps) {
             onSwitchGenre={handleSwitchGenre}
             onSwitchStructure={handleSwitchStructure}
             onSwitchMode={handleSwitchMode}
+            contextText={contextText}
           />
         </LexicalComposer>
         
