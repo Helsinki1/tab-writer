@@ -11,7 +11,7 @@ export default function Header() {
             <div className="w-11 h-11 bg-gradient-to-r from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-base">CH</span>
             </div>
-            <span className="text-4xl font-semibold text-gray-900 dark:text-white">
+            <span className="text-3xl font-semibold text-gray-900 dark:text-white">
               Chameleon
             </span>
           </div>
