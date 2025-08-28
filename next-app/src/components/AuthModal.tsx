@@ -12,7 +12,7 @@ export default function AuthModal({ isOpen, onClose, onCopy }: AuthModalProps) {
   if (!isOpen) return null
 
   const handleStarAndCopy = () => {
-    window.open('https://github.com/davidx/tab-writer', '_blank')
+    window.open('https://github.com/Helsinki1/tab-writer', '_blank')
     if (onCopy) {
       onCopy()
     }
