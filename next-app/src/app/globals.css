@@ -8,12 +8,6 @@
   --background-end-rgb: 255, 255, 255;
 }
 
-[data-theme="dark"] {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 0, 0, 0;
-  --background-end-rgb: 0, 0, 0;
-}
-
 body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
@@ -43,10 +37,6 @@ body {
   color: #000;
 }
 
-.dark .editor-inner {
-  color: #fff;
-}
-
 .editor-placeholder {
   position: absolute;
   top: 20px;
@@ -67,19 +57,35 @@ body {
 }
 
 .tone-professional {
-  @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300;
+  @apply bg-blue-100 text-blue-800;
 }
 
 .tone-casual {
-  @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300;
+  @apply bg-green-100 text-green-800;
 }
 
 .tone-creative {
-  @apply bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300;
+  @apply bg-purple-100 text-purple-800;
 }
 
 .tone-concise {
-  @apply bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300;
+  @apply bg-orange-100 text-orange-800;
+}
+
+.tone-witty {
+  @apply bg-pink-100 text-pink-800;
+}
+
+.tone-instructional {
+  @apply bg-indigo-100 text-indigo-800;
+}
+
+.tone-urgent {
+  @apply bg-red-100 text-red-800;
+}
+
+.tone-reflective {
+  @apply bg-gray-100 text-gray-800;
 }
 
 .loading-spinner {
@@ -89,5 +95,4 @@ body {
 /* Keyboard shortcut tooltip */
 .shortcut-tooltip {
   @apply absolute z-50 px-2 py-1 text-xs text-gray-600 bg-gray-100 rounded shadow-lg;
-  @apply dark:text-gray-400 dark:bg-gray-800;
 } 

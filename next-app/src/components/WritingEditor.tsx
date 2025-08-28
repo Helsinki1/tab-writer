@@ -21,7 +21,6 @@ import {
   KEY_ARROW_UP_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
 } from 'lexical';
-import { useAuth } from '../contexts/AuthContext';
 
 // Types
 type ToneType = 'professional' | 'casual' | 'creative' | 'concise' | 'witty' | 'instructional' | 'urgent' | 'reflective';
@@ -37,7 +36,7 @@ interface AutocompleteState {
 }
 
 interface WritingEditorProps {
-  onAuthRequired?: () => void;
+  onStarRequest?: (textToCopy: string) => void;
 }
 
 // API service
@@ -401,8 +400,7 @@ const initialConfig = {
 };
 
 // Main WritingEditor component
-export default function WritingEditor({ onAuthRequired }: WritingEditorProps) {
-  const { user } = useAuth();
+export default function WritingEditor({ onStarRequest }: WritingEditorProps) {
   const [currentTone, setCurrentTone] = useState<ToneType>('professional');
   const [currentPurpose, setCurrentPurpose] = useState<PurposeType>('informative');
   const [currentGenre, setCurrentGenre] = useState<GenreType>('email');
@@ -583,38 +581,30 @@ export default function WritingEditor({ onAuthRequired }: WritingEditorProps) {
     handleSwitchPurpose, 
     handleSwitchGenre,
     handleSwitchStructure,
-    handleSwitchMode,
-    user,
-    onAuthRequired
+    handleSwitchMode
   ]);
 
-  // Handle copy events to restrict copying when not authenticated
+  // Handle copy events - show star request popup
   const handleCopy = useCallback((event: React.ClipboardEvent) => {
-    if (!user) {
-      event.preventDefault();
-      onAuthRequired?.();
-      return;
+    // Show star request when user tries to copy
+    event.preventDefault();
+    if (onStarRequest) {
+      onStarRequest(editorText);
     }
-    // Allow copy if authenticated
-  }, [user, onAuthRequired]);
+  }, [onStarRequest, editorText]);
 
   // Copy to clipboard function
   const copyToClipboard = useCallback(() => {
-    if (!user) {
-      onAuthRequired?.();
-      return;
+    // Show star request when user clicks copy button
+    if (onStarRequest) {
+      onStarRequest(editorText);
     }
-    
-    navigator.clipboard.writeText(editorText).then(() => {
-      // You could add a toast notification here
-      console.log('Text copied to clipboard');
-    });
-  }, [editorText, user, onAuthRequired]);
+  }, [onStarRequest, editorText]);
 
   return (
     <div className="w-full">
       {/* Toolbar */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
                   <ControlsIndicator 
             tone={currentTone} 
             purpose={currentPurpose} 
@@ -627,35 +617,31 @@ export default function WritingEditor({ onAuthRequired }: WritingEditorProps) {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => setShowContextEditor(!showContextEditor)}
-            className="px-3 py-1 text-sm rounded transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+            className="px-3 py-1 text-sm rounded transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
             title="Add context to help with writing suggestions"
           >
             {showContextEditor ? 'Hide Context' : 'Add Context'}
           </button>
           <button
             onClick={copyToClipboard}
-            className={`px-3 py-1 text-sm rounded transition-colors ${
-              user 
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600' 
-                : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-800 border border-orange-300 dark:border-orange-600'
-            }`}
-            title={user ? 'Copy text to clipboard' : 'Sign in required to copy'}
+            className="px-3 py-1 text-sm rounded transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+            title="Copy text to clipboard"
           >
-            {user ? 'Copy' : '🔒 Copy'}
+            Copy
           </button>
         </div>
       </div>
 
       {/* Context Editor */}
       {showContextEditor && (
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="p-4 border-b border-gray-200 bg-gray-50">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Additional Context (helps improve suggestions):
           </label>
           <textarea
             value={contextText}
             onChange={(e) => setContextText(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 resize-none"
             placeholder="Add any context that would help with writing suggestions (e.g., audience, purpose, background information, etc.)"
             rows={3}
           />
@@ -716,14 +702,14 @@ export default function WritingEditor({ onAuthRequired }: WritingEditorProps) {
               top: `${(window as any).__cursorPosition?.y || 20}px`,
             }}
           >
-            <div className="suggestion-text bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 max-w-xs">
-              <span className="text-gray-600 dark:text-gray-300 italic">
+            <div className="suggestion-text bg-white px-3 py-2 rounded-lg shadow-lg border border-gray-200 max-w-xs">
+              <span className="text-gray-600 italic">
                 {autocompleteState.suggestion}
               </span>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-                <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs">Ctrl+Enter</kbd> accept • 
-                <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs">Ctrl+↑↓</kbd> tone • 
-                <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs">Esc</kbd> dismiss
+              <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+                <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">Ctrl+Enter</kbd> accept • 
+                <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">Ctrl+↑↓</kbd> tone • 
+                <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">Esc</kbd> dismiss
               </div>
             </div>
           </div>
