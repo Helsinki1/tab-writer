@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
+// Rate limiting cache
+const rateLimit = new Map<string, { count: number; timestamp: number }>();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 30; // 30 requests per minute per IP
+
 // Lazy OpenAI client initialization
 let openaiClient: OpenAI | null = null;
 
@@ -11,6 +16,31 @@ function getOpenAIClient(): OpenAI {
     });
   }
   return openaiClient;
+}
+
+// Rate limiting function
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const userLimit = rateLimit.get(ip);
+  
+  if (!userLimit || now - userLimit.timestamp > RATE_LIMIT_WINDOW) {
+    rateLimit.set(ip, { count: 1, timestamp: now });
+    return true;
+  }
+  
+  if (userLimit.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+  
+  userLimit.count++;
+  return true;
+}
+
+// Input validation function
+function validateInput(text: string): boolean {
+  if (!text || text.length > 1000) return false;
+  if (text.includes('sk-') || text.includes('API_KEY')) return false;
+  return true;
 }
 
 // Tone prompts configuration
@@ -156,6 +186,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<Autocompl
       );
     }
 
+    // Get client IP
+    const ip = request.ip || request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+
+    // Check rate limit
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     // Parse request body
     let data: AutocompleteRequest;
     try {
@@ -183,9 +224,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<Autocompl
     const context = data.context?.trim() || undefined;
     
     // Validate inputs
-    if (!text) {
+    if (!validateInput(text)) {
       return NextResponse.json(
-        { error: 'Text cannot be empty' },
+        { error: 'Invalid text input. Text cannot be empty or contain sensitive keywords.' },
         { status: 400 }
       );
     }
